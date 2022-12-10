@@ -15,6 +15,8 @@ class Scratch {
     );
     return data;
   }
+
+  
 }
 
 export default Scratch;
