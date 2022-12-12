@@ -1,14 +1,23 @@
-import fetch from "node-fetch";
+import fetch, { Response } from "node-fetch";
 
 import FeaturedItems from "../types/featuredItems";
+import Project from "../types/project";
+import {
+  ProjectDetails,
+  ProjectGeneralDetails,
+  ProjectEditorDetails,
+} from "../types/projectDetails";
+import UserLoginResponse from "../types/userLoginResponse";
+
 import getHeaderValue from "./getHeaderValue";
 
 class Scratch {
   private scratchSessionId: string = "";
   private csrfToken: string = "";
+  private userToken: string = "";
 
   public async checkUsernameExists(username: string): Promise<boolean> {
-    const checkUsernameExistsResponse: any = await fetch(
+    const checkUsernameExistsResponse: Response = await fetch(
       `https://api.scratch.mit.edu/accounts/checkusername/${username}/`,
       { method: "get" }
     );
@@ -16,7 +25,7 @@ class Scratch {
   }
 
   public async getFeaturedItems(): Promise<FeaturedItems> {
-    const featuredItemsResponse: any = await fetch(
+    const featuredItemsResponse: Response = await fetch(
       "https://api.scratch.mit.edu/proxy/featured",
       { method: "get" }
     );
@@ -25,7 +34,7 @@ class Scratch {
 
   public async login(username: string, password: string) {
     if (!this.csrfToken) {
-      const { headers }: any = await fetch(
+      const { headers }: Response = await fetch(
         "https://scratch.mit.edu/csrf_token/",
         {
           method: "get",
@@ -38,7 +47,7 @@ class Scratch {
       );
     }
 
-    const loginResponse: any = await fetch(
+    const loginResponse: Response = await fetch(
       "https://scratch.mit.edu/accounts/login/",
       {
         method: "post",
@@ -60,6 +69,46 @@ class Scratch {
       `";`
     );
     //gets scratch session id
+
+    const userLoginData: UserLoginResponse[] = await loginResponse.json();
+    this.userToken = userLoginData[0].token;
+  }
+
+  public async getProjects(): Promise<Project[]> {
+    const projectsResponse: Response = await fetch(
+      "https://scratch.mit.edu/site-api/projects/all/",
+      {
+        method: "get",
+        headers: { cookie: `scratchsessionsid="${this.scratchSessionId}"` },
+      }
+    );
+
+    return await projectsResponse.json();
+  }
+
+  public async getProjectDetails(
+    projectId: number | string
+  ): Promise<ProjectDetails> {
+    const projectGeneralDetailsResponse: Response = await fetch(
+      `https://api.scratch.mit.edu/projects/${projectId}/`,
+      {
+        method: "get",
+        headers: { "x-token": this.userToken },
+      }
+    );
+    const projectGeneralDetails: ProjectGeneralDetails =
+      await projectGeneralDetailsResponse.json();
+
+    const projectEditorDetailsResponse: Response = await fetch(
+      `https://projects.scratch.mit.edu/${projectId}?token=${projectGeneralDetails.project_token}`,
+      {
+        method: "get",
+      }
+    );
+    const projectEditorDetails: ProjectEditorDetails =
+      await projectEditorDetailsResponse.json();
+
+    return { projectGeneralDetails, projectEditorDetails };
   }
 }
 
