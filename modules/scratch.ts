@@ -113,3 +113,53 @@ class Scratch {
 }
 
 export default Scratch;
+
+const e = {
+  extensions: [],
+  meta: {
+    agent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+    semver: "3.0.0",
+    vm: "1.2.54",
+  },
+  monitors: [],
+  targets: [
+    {
+      blocks: {},
+      broadcasts: {},
+      comments: {},
+      costumes: [
+        {
+          assetId: "cd21514d0531fdffb22204e0ec5ed84a",
+          dataFormat: "svg",
+          md5ext: "cd21514d0531fdffb22204e0ec5ed84a.svg",
+          name: "backdrop1",
+          rotationCenterX: 240,
+          rotationCenterY: 180,
+        },
+      ],
+      currentCostume: 0,
+      isStage: true,
+      layerOrder: 0,
+      lists: {},
+      name: "Stage",
+      sounds: [
+        {
+          assetId: "83a9787d4cb6f3b7632b4ddfebf74367",
+          dataFormat: "wav",
+          format: "",
+          md5ext: "83a9787d4cb6f3b7632b4ddfebf74367.wav",
+          name: "pop",
+          rate: 48000,
+          sampleCount: 1123,
+        },
+      ],
+      tempo: 60,
+      textToSpeechLanguage: null,
+      variables: { "`jEk@4|i[#Fk?(8x)AV.-my variable": ["my variable", 0] },
+      videoState: "on",
+      videoTransparency: 50,
+      volume: 100,
+    },
+  ],
+};
