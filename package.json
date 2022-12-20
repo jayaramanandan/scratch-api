@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "browser-cookies": "^1.2.0",
+    "fs": "^0.0.1-security",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {

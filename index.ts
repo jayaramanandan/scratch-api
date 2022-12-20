@@ -1,9 +1,11 @@
-import Scratch from "./modules/scratch";
+import Scratch from "./modules/Scratch";
+import Sprite from "./modules/Sprite";
 
 const scratch: Scratch = new Scratch();
 
 async function main() {
-  await scratch.login("AbeIsGood", "Catterpillar!23");
+  const sprite = new Sprite("ben");
+  sprite.whenGreenFlagClicked();
 }
 
 main();
