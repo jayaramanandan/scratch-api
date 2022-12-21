@@ -37,8 +37,8 @@ interface Sound {
 }
 interface Block {
   opcode: string;
-  next: string;
-  parent: string;
+  next: string | null;
+  parent: string | null;
   inputs: any;
   fields: any;
   shadow: boolean;
