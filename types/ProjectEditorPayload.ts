@@ -1,3 +1,5 @@
+import SimpleBlock from "./SimpleBlock";
+
 interface Meta {
   agent: string;
   semver: string;
@@ -35,14 +37,10 @@ interface Sound {
   rate: number;
   sampleCount: number;
 }
-interface Block {
-  opcode: string;
+interface Block extends SimpleBlock {
   next: string | null;
   parent: string | null;
-  inputs: any;
-  fields: any;
   shadow: boolean;
-  topLevel: boolean;
   x?: number;
   y?: number;
 }
