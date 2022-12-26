@@ -6,8 +6,10 @@ async function main() {
 
   const sprite = new Sprite("ben");
   sprite.whenGreenFlagClicked();
-  sprite.moveSteps(sprite.getXPosition);
-  console.log(sprite.blocks);
+  sprite.changeYBy(sprite.getXPosition);
+  sprite.changeXBy(sprite.getYPosition);
+  sprite.setXTo(sprite.getXPosition);
+  sprite.setYTo(sprite.getYPosition);
 
   console.log(
     await scratch.saveProject(775109266, {

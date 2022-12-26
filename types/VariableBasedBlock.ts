@@ -1,7 +1,7 @@
 interface BlockInputFieldValues {
   inputFieldName: string;
   values: any[];
-  parameterValue: string | number | Function;
+  parameterValue: Function | any;
 }
 
 interface VariableBasedBlock {

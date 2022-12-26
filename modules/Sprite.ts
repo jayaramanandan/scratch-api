@@ -30,15 +30,9 @@ class Sprite {
     blockCountsAway: number,
     isVariableBlock?: boolean
   ): string {
-    return `${isVariableBlock && isVariableBlock == true && "variableBlock-"}${
-      this.spriteHash
-    }${this.blocksCount + blockCountsAway}`;
-  }
-
-  private addBlock(block: Block): void {
-    const blockId: string = this.spriteHash + this.blocksCount;
-    this.blocks[blockId] = block;
-    this.blocksCount++;
+    return `${isVariableBlock ? "variableBlock-" : ""}${this.spriteHash}${
+      this.blocksCount + blockCountsAway
+    }`;
   }
 
   private addSimpleBlock({
@@ -104,30 +98,48 @@ class Sprite {
         : fieldValues.length);
       i++
     ) {
-      console.log(fieldValues[i].parameterValue);
       if (inputValues[i]) {
         inputs[inputValues[i].inputFieldName] =
-          typeof fieldValues[i].parameterValue == "function"
+          typeof inputValues[i].parameterValue == "function"
             ? inputValues[i].values[1]
             : inputValues[i].values[0];
-        this.blocks[this.getBlockId(0, true) + `${i}`] = {
-          opcode:
-            typeof fieldValues[i].parameterValue == "function"
-              ? fieldValues[i].parameterValue() //fix this
-              : fieldValues[i].parameterValue,
-          inputs: {},
-          fields: {},
-          next: null,
-          parent: this.getBlockId(0),
-          shadow: false,
-          topLevel: false,
-        };
+
+        if (typeof inputValues[i].parameterValue == "function") {
+          this.blocks[this.getBlockId(0, true) + `${i}`] = {
+            opcode:
+              typeof inputValues[i].parameterValue == "function"
+                ? inputValues[i].parameterValue()
+                : inputValues[i].parameterValue,
+            inputs: {},
+            fields: {},
+            next: null,
+            parent: this.getBlockId(0),
+            shadow: false,
+            topLevel: false,
+          };
+        }
       }
+
       if (fieldValues[i]) {
         inputs[fieldValues[i].inputFieldName] =
           typeof fieldValues[i].parameterValue == "function"
             ? fieldValues[i].values[1]
             : fieldValues[i].values[0];
+
+        if (typeof fieldValues[i].parameterValue == "function") {
+          this.blocks[this.getBlockId(0, true) + `${i}`] = {
+            opcode:
+              typeof fieldValues[i].parameterValue == "function"
+                ? fieldValues[i].parameterValue()
+                : fieldValues[i].parameterValue,
+            inputs: {},
+            fields: {},
+            next: null,
+            parent: this.getBlockId(0),
+            shadow: false,
+            topLevel: false,
+          };
+        }
       }
     }
 
@@ -176,18 +188,6 @@ class Sprite {
     direction: "right" | "left",
     degrees: number | Function
   ): void {
-    this.addSimpleBlock({
-      opcode: `motion_turn${direction}`,
-      inputs: {
-        DEGREES:
-          typeof degrees == "number"
-            ? [1, [4, `${degrees}`]]
-            : [3, `${this.spriteHash}${this.blocksCount + 1}`, [4, "15"]],
-      },
-      fields: {},
-      topLevel: false,
-    });
-
     this.addVariableBasedBlock({
       mainBlockOpcode: `motion_turn${direction}`,
       inputValues: [
@@ -195,7 +195,7 @@ class Sprite {
           inputFieldName: "DEGREES",
           values: [
             [1, [4, `${degrees}`]],
-            [3, "variableBlock-" + this.getBlockId(0), [4, "10"]],
+            [3, this.getBlockId(0, true) + "0", [4, "0"]],
           ],
           parameterValue: degrees,
         },
@@ -205,14 +205,27 @@ class Sprite {
   }
 
   public goToCoordinates(x: number | Function, y: number | Function): void {
-    this.addSimpleBlock({
-      opcode: "motion_gotoxy",
-      inputs: {
-        X: [1, [4, `${x}`]],
-        Y: [1, [4, `${y}`]],
-      },
-      fields: {},
-      topLevel: false,
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_gotoxy",
+      inputValues: [
+        {
+          inputFieldName: "X",
+          values: [
+            [1, [4, `${x}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "10"]],
+          ],
+          parameterValue: x,
+        },
+        {
+          inputFieldName: "Y",
+          values: [
+            [1, [4, `${y}`]],
+            [3, this.getBlockId(0, true) + "1", [4, "10"]],
+          ],
+          parameterValue: y,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
@@ -220,7 +233,7 @@ class Sprite {
     this.addSimpleBlock({
       opcode: "motion_goto",
       inputs: {
-        TO: [1, `${this.spriteHash}${this.blocksCount + 1}`],
+        TO: [1, this.getBlockId(1)],
       },
       fields: {},
       topLevel: false,
@@ -232,7 +245,7 @@ class Sprite {
         location == "random" || location == "mouse"
           ? {}
           : {
-              TO: [1, `${this.spriteHash}${this.blocksCount + 1}`],
+              TO: [1, this.getBlockId(1)],
             },
       fields: {
         TO: [
@@ -246,32 +259,69 @@ class Sprite {
     }); //adds dropdown
   }
 
-  public glideToCoordinates(x: number, y: number, seconds: number): void {
-    this.addSimpleBlock({
-      opcode: "motion_glidesecstoxy",
-      inputs: {
-        SECS: [1, [4, `${seconds}`]],
-        X: [1, [4, `${x}`]],
-        Y: [1, [4, `${y}`]],
-      },
-      fields: {},
-      topLevel: false,
+  public glideToCoordinates(
+    seconds: number | Function,
+    x: number | Function,
+    y: number | Function
+  ): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_glidesecstoxy",
+      inputValues: [
+        {
+          inputFieldName: "SECS",
+          values: [
+            [1, [4, `${seconds}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: seconds,
+        },
+        {
+          inputFieldName: "X",
+          values: [
+            [1, [4, `${x}`]],
+            [3, this.getBlockId(0, true) + "1", [4, "1"]],
+          ],
+          parameterValue: x,
+        },
+        {
+          inputFieldName: "Y",
+          values: [
+            [1, [4, `${y}`]],
+            [3, this.getBlockId(0, true) + "2", [4, "1"]],
+          ],
+          parameterValue: y,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
   public glideToLocation(
-    location: "random" | "mouse" | Sprite,
-    seconds: number
+    seconds: number | Function,
+    location: "random" | "mouse" | Sprite
   ): void {
-    this.addSimpleBlock({
-      opcode: "motion_glideto",
-      inputs: {
-        SECS: [1, [4, `${seconds}`]],
-        TO: [1, `${this.spriteHash}${this.blocksCount + 1}`],
-      },
-      fields: {},
-      topLevel: false,
-    }); //adds main block
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_glideto",
+      inputValues: [
+        {
+          inputFieldName: "SECS",
+          values: [
+            [1, [4, `${seconds}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: seconds,
+        },
+        {
+          inputFieldName: "TO",
+          values: [
+            [1, this.getBlockId(1)],
+            [1, this.getBlockId(1)],
+          ],
+          parameterValue: null,
+        },
+      ],
+      fieldValues: [],
+    });
 
     this.addMenuBlock({
       opcode: "motion_glideto_menu",
@@ -288,19 +338,25 @@ class Sprite {
     }); //adds dropdown
   }
 
-  public pointInDirection(degrees: number): void {
+  public pointInDirection(degrees: number | Function): void {
     if (degrees < -90 || degrees > 180)
       throw new Error(
         "pointInDirection function takes degrees argument to be between -90 and 180 only"
       );
 
-    this.addSimpleBlock({
-      opcode: "motion_pointindirection",
-      inputs: {
-        DIRECTION: [1, [8, `${degrees}`]],
-      },
-      fields: {},
-      topLevel: false,
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_pointindirection",
+      inputValues: [
+        {
+          inputFieldName: "DIRECTION",
+          values: [
+            [1, [4, `${degrees}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: degrees,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
@@ -308,7 +364,7 @@ class Sprite {
     this.addSimpleBlock({
       opcode: "motion_pointtowards",
       inputs: {
-        TOWARDS: [1, `${this.spriteHash}${this.blocksCount + 1}`],
+        TOWARDS: [1, this.getBlockId(1)],
       },
       fields: {},
       topLevel: false,
@@ -328,47 +384,71 @@ class Sprite {
     }); //adds dropdown
   }
 
-  public changeXBy(x: number): void {
-    this.addSimpleBlock({
-      opcode: "motion_changexby",
-      inputs: {
-        DX: [1, [4, `${x}`]],
-      },
-      fields: {},
-      topLevel: false,
+  public changeXBy(x: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_changexby",
+      inputValues: [
+        {
+          inputFieldName: "DX",
+          values: [
+            [1, [4, `${x}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: x,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
-  public changeYBy(y: number): void {
-    this.addSimpleBlock({
-      opcode: "motion_changeyby",
-      inputs: {
-        DY: [1, [4, `${y}`]],
-      },
-      fields: {},
-      topLevel: false,
+  public changeYBy(y: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_changeyby",
+      inputValues: [
+        {
+          inputFieldName: "DY",
+          values: [
+            [1, [4, `${y}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: y,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
-  public setXTo(x: number): void {
-    this.addSimpleBlock({
-      opcode: "motion_setx",
-      inputs: {
-        X: [1, [4, `${x}`]],
-      },
-      fields: {},
-      topLevel: false,
+  public setXTo(x: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_setx",
+      inputValues: [
+        {
+          inputFieldName: "X",
+          values: [
+            [1, [4, `${x}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: x,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
-  public setYTo(y: number): void {
-    this.addSimpleBlock({
-      opcode: "motion_sety",
-      inputs: {
-        Y: [1, [4, `${y}`]],
-      },
-      fields: {},
-      topLevel: false,
+  public setYTo(y: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "motion_sety",
+      inputValues: [
+        {
+          inputFieldName: "Y",
+          values: [
+            [1, [4, `${y}`]],
+            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+          ],
+          parameterValue: y,
+        },
+      ],
+      fieldValues: [],
     });
   }
 
