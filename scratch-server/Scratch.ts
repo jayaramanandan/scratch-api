@@ -1,13 +1,13 @@
 import fetch, { Response } from "node-fetch";
 
-import FeaturedItems from "../types/FeaturedItems";
-import Project from "../types/Project";
+import FeaturedItems from "./types/FeaturedItems";
+import Project from "./types/Project";
 import {
   ProjectDetails,
   ProjectGeneralDetails,
   ProjectEditorDetails,
-} from "../types/ProjectDetails";
-import UserLoginResponse from "../types/UserLoginResponse";
+} from "./types/ProjectDetails";
+import UserLoginResponse from "./types/userLoginResponse";
 
 import getHeaderValue from "./getHeaderValue";
 
