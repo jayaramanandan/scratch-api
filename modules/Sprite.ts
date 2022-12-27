@@ -472,7 +472,7 @@ class Sprite {
       },
       topLevel: false,
     });
-  }
+  } // continue on this one
 
   public getXPosition(): string {
     return "motion_xposition";
