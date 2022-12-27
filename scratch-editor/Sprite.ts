@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
-import { Block } from "../types/ProjectEditorPayload";
-import SimpleBlock from "../types/SimpleBlock";
-import VariableBasedBlock from "../types/VariableBasedBlock";
+import Block from "./types/Block";
+import SimpleBlock from "./types/SimpleBlock";
+import VariableBasedBlock from "./types/VariableBasedBlock";
 
 class Sprite {
   public blocks: any = {};
@@ -69,10 +69,10 @@ class Sprite {
     inputs,
     topLevel,
   }: SimpleBlock): void {
-    this.blocks[this.spriteHash + this.blocksCount] = {
+    this.blocks[this.getBlockId(0)] = {
       opcode,
       next: null,
-      parent: `${this.spriteHash}${this.blocksCount - 1}`,
+      parent: this.getBlockId(-1),
       inputs,
       fields,
       shadow: true,
@@ -480,6 +480,100 @@ class Sprite {
 
   public getYPosition(): string {
     return "motion_yposition";
+  }
+
+  public getDirection(): string {
+    return "motion_direction";
+  }
+
+  public sayForSeconds(
+    text: string | Function,
+    seconds: number | Function
+  ): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_sayforsecs",
+      inputValues: [
+        {
+          inputFieldName: "MESSAGE",
+          values: [
+            [1, [10, `${text}`]],
+            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+          ],
+          parameterValue: text,
+        },
+        {
+          inputFieldName: "SECS",
+          values: [
+            [1, [4, `${seconds}`]],
+            [3, this.getBlockId(0, true) + "1", [10, "0"]],
+          ],
+          parameterValue: seconds,
+        },
+      ],
+      fieldValues: [],
+    });
+  }
+
+  public say(text: string | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_say",
+      inputValues: [
+        {
+          inputFieldName: "MESSAGE",
+          values: [
+            [1, [10, `${text}`]],
+            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+          ],
+          parameterValue: text,
+        },
+      ],
+      fieldValues: [],
+    });
+  }
+
+  public thinkForSeconds(
+    thinkText: string | Function,
+    seconds: number | Function
+  ): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_thinkforsecs",
+      inputValues: [
+        {
+          inputFieldName: "MESSAGE",
+          values: [
+            [1, [10, `${thinkText}`]],
+            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+          ],
+          parameterValue: thinkText,
+        },
+        {
+          inputFieldName: "SECS",
+          values: [
+            [1, [4, `${seconds}`]],
+            [3, this.getBlockId(0, true) + "1", [10, "0"]],
+          ],
+          parameterValue: seconds,
+        },
+      ],
+      fieldValues: [],
+    });
+  }
+
+  public think(thinkText: string | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_think",
+      inputValues: [
+        {
+          inputFieldName: "MESSAGE",
+          values: [
+            [1, [10, `${thinkText}`]],
+            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+          ],
+          parameterValue: thinkText,
+        },
+      ],
+      fieldValues: [],
+    });
   }
 }
 

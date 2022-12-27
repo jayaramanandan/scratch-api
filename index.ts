@@ -1,15 +1,16 @@
-import Scratch from "./modules/Scratch";
-import Sprite from "./modules/Sprite";
+import Scratch from "./scratch-server/Scratch";
+import Sprite from "./scratch-editor/Sprite";
+
 async function main() {
   const scratch = new Scratch();
   await scratch.login("AbeIsGood", `console.log("1")`);
 
   const sprite = new Sprite("ben");
   sprite.whenGreenFlagClicked();
-  sprite.changeYBy(sprite.getXPosition);
-  sprite.changeXBy(sprite.getYPosition);
-  sprite.setXTo(sprite.getXPosition);
-  sprite.setYTo(sprite.getYPosition);
+  sprite.say(sprite.getXPosition);
+  sprite.sayForSeconds(sprite.getXPosition, sprite.getDirection);
+  sprite.think(sprite.getDirection);
+  sprite.thinkForSeconds(sprite.getYPosition, sprite.getDirection);
 
   console.log(
     await scratch.saveProject(775109266, {
