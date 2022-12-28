@@ -7,10 +7,10 @@ async function main() {
 
   const sprite = new Sprite("ben");
   sprite.whenGreenFlagClicked();
-  sprite.say(sprite.getXPosition);
-  sprite.sayForSeconds(sprite.getXPosition, sprite.getDirection);
-  sprite.think(sprite.getDirection);
-  sprite.thinkForSeconds(sprite.getYPosition, sprite.getDirection);
+  sprite.switchCostumeTo("abe");
+  sprite.switchCostumeTo(sprite.getDirection);
+  sprite.switchBackdropTo("abe");
+  sprite.switchBackdropTo(sprite.getXPosition);
 
   console.log(
     await scratch.saveProject(775109266, {

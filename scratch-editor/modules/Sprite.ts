@@ -42,4 +42,4 @@ interface Sprite {
   volume: number;
 }
 
-export default Sprite;
+export { Sprite, Costume };

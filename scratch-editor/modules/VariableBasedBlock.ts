@@ -10,4 +10,4 @@ interface VariableBasedBlock {
   fieldValues: BlockInputFieldValues[];
 }
 
-export default VariableBasedBlock;
+export { VariableBasedBlock, BlockInputFieldValues };

@@ -1,26 +1,19 @@
 import { createHash } from "crypto";
-import Block from "./types/Block";
-import SimpleBlock from "./types/SimpleBlock";
-import VariableBasedBlock from "./types/VariableBasedBlock";
+import SimpleBlock from "./modules/SimpleBlock";
+import { VariableBasedBlock } from "./modules/VariableBasedBlock";
+import { Costume } from "./modules/Sprite";
+import MenuBasedBlock from "./modules/MenuBasedBlock";
+import Block from "./modules/Block";
 
 class Sprite {
-  public blocks: any = {};
-  private previousBlock: { id: string | null; block: Block } = {
-    id: null,
-    block: {
-      opcode: "event_whenflagclicked",
-      fields: {},
-      inputs: {},
-      next: null,
-      parent: null,
-      shadow: false,
-      topLevel: true,
-      x: 0,
-      y: 0,
-    },
-  }; //default starting block
+  public blocks: { [id: string]: Block } = {};
   private spriteHash: string;
   private blocksCount: number = 0;
+  private costumes: { availableCostumes: any; costumes: Costume[] } = {
+    availableCostumes: { abe: [] },
+    costumes: [],
+  };
+  private availableBackdrops: any = { abe: [] };
 
   constructor(public name: string, private costumeImageFileName?: string) {
     this.spriteHash = createHash("sha256").update(name).digest("base64");
@@ -28,11 +21,14 @@ class Sprite {
 
   private getBlockId(
     blockCountsAway: number,
-    isVariableBlock?: boolean
+    blockType?: "variable" | "menu"
   ): string {
-    return `${isVariableBlock ? "variableBlock-" : ""}${this.spriteHash}${
-      this.blocksCount + blockCountsAway
-    }`;
+    let prefix: string = "";
+
+    if (blockType == "variable") prefix = "variableBlock-";
+    else if (blockType == "menu") prefix = "menuBlock-";
+
+    return `${prefix}${this.spriteHash}${this.blocksCount + blockCountsAway}`;
   }
 
   private addSimpleBlock({
@@ -82,11 +78,38 @@ class Sprite {
     this.blocksCount++;
   }
 
-  private addVariableBasedBlock({
+  private addMenuBasedBlock({
     mainBlockOpcode,
+    menuBlockOpcode,
     inputValues,
     fieldValues,
-  }: VariableBasedBlock) {
+    menuFields,
+    topLevel,
+  }: MenuBasedBlock): void {
+    this.addVariableBasedBlock(
+      { mainBlockOpcode, inputValues, fieldValues },
+      true
+    );
+
+    this.blocks[this.getBlockId(0, "menu")] = {
+      opcode: menuBlockOpcode,
+      inputs: {},
+      fields: menuFields,
+      parent: this.getBlockId(0),
+      next: null,
+      shadow: true,
+      topLevel,
+    };
+
+    this.blocks[this.getBlockId(-1)].next = this.getBlockId(0);
+
+    this.blocksCount++;
+  }
+
+  private addVariableBasedBlock(
+    { mainBlockOpcode, inputValues, fieldValues }: VariableBasedBlock,
+    notIncreaseBlockCount?: boolean
+  ): void {
     let inputs: any = {};
     let fields: any = {};
 
@@ -105,7 +128,7 @@ class Sprite {
             : inputValues[i].values[0];
 
         if (typeof inputValues[i].parameterValue == "function") {
-          this.blocks[this.getBlockId(0, true) + `${i}`] = {
+          this.blocks[this.getBlockId(0, "variable") + `${i}`] = {
             opcode:
               typeof inputValues[i].parameterValue == "function"
                 ? inputValues[i].parameterValue()
@@ -127,7 +150,7 @@ class Sprite {
             : fieldValues[i].values[0];
 
         if (typeof fieldValues[i].parameterValue == "function") {
-          this.blocks[this.getBlockId(0, true) + `${i}`] = {
+          this.blocks[this.getBlockId(0, "variable") + `${i}`] = {
             opcode:
               typeof fieldValues[i].parameterValue == "function"
                 ? fieldValues[i].parameterValue()
@@ -155,7 +178,7 @@ class Sprite {
       topLevel: false,
     };
 
-    this.blocksCount++;
+    if (!notIncreaseBlockCount) this.blocksCount++;
   }
 
   public whenGreenFlagClicked(): void {
@@ -176,7 +199,7 @@ class Sprite {
           parameterValue: steps,
           values: [
             [1, [4, `${steps}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "10"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "10"]],
           ],
         },
       ],
@@ -195,7 +218,7 @@ class Sprite {
           inputFieldName: "DEGREES",
           values: [
             [1, [4, `${degrees}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "0"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "0"]],
           ],
           parameterValue: degrees,
         },
@@ -212,7 +235,7 @@ class Sprite {
           inputFieldName: "X",
           values: [
             [1, [4, `${x}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "10"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "10"]],
           ],
           parameterValue: x,
         },
@@ -220,7 +243,7 @@ class Sprite {
           inputFieldName: "Y",
           values: [
             [1, [4, `${y}`]],
-            [3, this.getBlockId(0, true) + "1", [4, "10"]],
+            [3, this.getBlockId(0, "variable") + "1", [4, "10"]],
           ],
           parameterValue: y,
         },
@@ -271,7 +294,7 @@ class Sprite {
           inputFieldName: "SECS",
           values: [
             [1, [4, `${seconds}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: seconds,
         },
@@ -279,7 +302,7 @@ class Sprite {
           inputFieldName: "X",
           values: [
             [1, [4, `${x}`]],
-            [3, this.getBlockId(0, true) + "1", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "1", [4, "1"]],
           ],
           parameterValue: x,
         },
@@ -287,7 +310,7 @@ class Sprite {
           inputFieldName: "Y",
           values: [
             [1, [4, `${y}`]],
-            [3, this.getBlockId(0, true) + "2", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "2", [4, "1"]],
           ],
           parameterValue: y,
         },
@@ -307,7 +330,7 @@ class Sprite {
           inputFieldName: "SECS",
           values: [
             [1, [4, `${seconds}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: seconds,
         },
@@ -351,7 +374,7 @@ class Sprite {
           inputFieldName: "DIRECTION",
           values: [
             [1, [4, `${degrees}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: degrees,
         },
@@ -392,7 +415,7 @@ class Sprite {
           inputFieldName: "DX",
           values: [
             [1, [4, `${x}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: x,
         },
@@ -409,7 +432,7 @@ class Sprite {
           inputFieldName: "DY",
           values: [
             [1, [4, `${y}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: y,
         },
@@ -426,7 +449,7 @@ class Sprite {
           inputFieldName: "X",
           values: [
             [1, [4, `${x}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: x,
         },
@@ -443,7 +466,7 @@ class Sprite {
           inputFieldName: "Y",
           values: [
             [1, [4, `${y}`]],
-            [3, this.getBlockId(0, true) + "0", [4, "1"]],
+            [3, this.getBlockId(0, "variable") + "0", [4, "1"]],
           ],
           parameterValue: y,
         },
@@ -472,7 +495,7 @@ class Sprite {
       },
       topLevel: false,
     });
-  } // continue on this one
+  }
 
   public getXPosition(): string {
     return "motion_xposition";
@@ -497,7 +520,7 @@ class Sprite {
           inputFieldName: "MESSAGE",
           values: [
             [1, [10, `${text}`]],
-            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "0", [10, "0"]],
           ],
           parameterValue: text,
         },
@@ -505,7 +528,7 @@ class Sprite {
           inputFieldName: "SECS",
           values: [
             [1, [4, `${seconds}`]],
-            [3, this.getBlockId(0, true) + "1", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "1", [10, "0"]],
           ],
           parameterValue: seconds,
         },
@@ -522,7 +545,7 @@ class Sprite {
           inputFieldName: "MESSAGE",
           values: [
             [1, [10, `${text}`]],
-            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "0", [10, "0"]],
           ],
           parameterValue: text,
         },
@@ -542,7 +565,7 @@ class Sprite {
           inputFieldName: "MESSAGE",
           values: [
             [1, [10, `${thinkText}`]],
-            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "0", [10, "0"]],
           ],
           parameterValue: thinkText,
         },
@@ -550,7 +573,7 @@ class Sprite {
           inputFieldName: "SECS",
           values: [
             [1, [4, `${seconds}`]],
-            [3, this.getBlockId(0, true) + "1", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "1", [10, "0"]],
           ],
           parameterValue: seconds,
         },
@@ -567,9 +590,120 @@ class Sprite {
           inputFieldName: "MESSAGE",
           values: [
             [1, [10, `${thinkText}`]],
-            [3, this.getBlockId(0, true) + "0", [10, "0"]],
+            [3, this.getBlockId(0, "variable") + "0", [10, "0"]],
           ],
           parameterValue: thinkText,
+        },
+      ],
+      fieldValues: [],
+    });
+  }
+
+  public switchCostumeTo(costumeName: string | Function): void {
+    if (
+      typeof costumeName == "string" &&
+      this.costumes.availableCostumes[costumeName] == undefined
+    )
+      throw new Error(`${costumeName} is not an available costume`);
+
+    this.addMenuBasedBlock({
+      mainBlockOpcode: "looks_switchcostumeto",
+      menuBlockOpcode: "looks_costume",
+      inputValues: [
+        {
+          inputFieldName: "COSTUME",
+          values: [
+            [1, this.getBlockId(0, "menu")],
+            [3, this.getBlockId(0, "variable") + 0, this.getBlockId(0, "menu")],
+          ],
+          parameterValue: costumeName,
+        },
+      ],
+      fieldValues: [],
+      menuFields: { COSTUME: [costumeName, null] },
+      topLevel: false,
+    });
+  }
+
+  public nextCostume(): void {
+    this.addSimpleBlock({
+      opcode: "looks_nextcostume",
+      inputs: {},
+      fields: {},
+      topLevel: false,
+    });
+  }
+
+  public switchBackdropTo(
+    backdropName:
+      | string
+      | "next backdrop"
+      | "previous backdrop"
+      | "random backdrop"
+      | Function
+  ): void {
+    if (
+      typeof backdropName == "string" &&
+      this.availableBackdrops[backdropName] == undefined
+    )
+      throw new Error(`${backdropName} is not an available costume`);
+
+    this.addMenuBasedBlock({
+      mainBlockOpcode: "looks_switchbackdropto",
+      menuBlockOpcode: "looks_backdrops",
+      inputValues: [
+        {
+          inputFieldName: "BACKDROP",
+          values: [
+            [1, this.getBlockId(0, "menu")],
+            [3, this.getBlockId(0, "variable") + 0, this.getBlockId(0, "menu")],
+          ],
+          parameterValue: backdropName,
+        },
+      ],
+      fieldValues: [],
+      menuFields: { BACKDROP: [backdropName, null] },
+      topLevel: false,
+    });
+  }
+
+  public nextBackdrop(): void {
+    this.addSimpleBlock({
+      opcode: "looks_nextbackdrop",
+      inputs: {},
+      fields: {},
+      topLevel: false,
+    });
+  }
+
+  public changeSizeBy(change: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_changesizeby",
+      inputValues: [
+        {
+          inputFieldName: "CHANGE",
+          values: [
+            [1, [4, `${change}`]],
+            [3, this.getBlockId(0, "variable") + 0, [4, "0"]],
+          ],
+          parameterValue: change,
+        },
+      ],
+      fieldValues: [],
+    });
+  }
+
+  public setSizeTo(percentage: number | Function): void {
+    this.addVariableBasedBlock({
+      mainBlockOpcode: "looks_setsizeto",
+      inputValues: [
+        {
+          inputFieldName: "SIZE",
+          values: [
+            [1, [4, `${percentage}`]],
+            [3, this.getBlockId(0, "variable") + 0, [4, "0"]],
+          ],
+          parameterValue: percentage,
         },
       ],
       fieldValues: [],
