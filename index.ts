@@ -5,12 +5,8 @@ async function main() {
   const scratch = new Scratch();
   await scratch.login("AbeIsGood", `console.log("1")`);
 
-  const sprite = new Sprite("ben");
+  const sprite = new Sprite("Sprite 1");
   sprite.whenGreenFlagClicked();
-  sprite.switchCostumeTo("abe");
-  sprite.switchCostumeTo(sprite.getDirection);
-  sprite.switchBackdropTo("abe");
-  sprite.switchBackdropTo(sprite.getXPosition);
 
   console.log(
     await scratch.saveProject(775109266, {
