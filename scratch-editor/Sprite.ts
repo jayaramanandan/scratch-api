@@ -1,22 +1,27 @@
 import { createHash } from "crypto";
-import SimpleBlock from "./modules/SimpleBlock";
-import { VariableBasedBlock } from "./modules/VariableBasedBlock";
-import { Costume } from "./modules/Sprite";
-import MenuBasedBlock from "./modules/MenuBasedBlock";
-import Block from "./modules/Block";
-import { BlockDetails, Field, Inputs } from "./modules/BlockDetails";
+import { readdirSync, readFileSync, writeFileSync } from "fs";
+import { resolve, parse, ParsedPath } from "path";
+import sizeOf from "image-size";
+import sox from "sox.js";
+
+import { BlockDetails, Field, Inputs } from "./modules/types/BlockDetails";
+import SpriteDetails from "./modules/types/SpriteDetails";
+import CacheJsonObject from "./modules/types/CacheJsonObject";
+import md5Convert from "./modules/functions/md5Convert";
+import { ISizeCalculationResult } from "image-size/dist/types/interface";
 
 class Sprite {
-  public blocks: { [id: string]: Block } = {};
+  public spriteDetails: SpriteDetails = {
+    blocks: {},
+    costumes: { availableCostumes: {}, costumes: [], newCostumes: [] },
+    sounds: { availableSounds: {}, soundsFolder: "", sounds: [] },
+  };
   private spriteHash: string;
   private blocksCount: number = 0;
-  private costumes: { availableCostumes: any; costumes: Costume[] } = {
-    availableCostumes: { abe: [] },
-    costumes: [],
-  };
+
   private availableBackdrops: any = { abe: [] };
 
-  constructor(public name: string, private costumeImageFileName?: string) {
+  constructor(public name: string) {
     this.spriteHash = createHash("sha256").update(name).digest("base64");
   }
 
@@ -33,7 +38,7 @@ class Sprite {
     for (let i: number = 0; i < blockParameters.length; i++) {
       if (blockParameters[i].parameterType == "parameter") {
         if (typeof blockParameters[i].parameterValue == "function") {
-          this.blocks[`${this.getBlockId(0, "variable")}${i}`] = {
+          this.spriteDetails.blocks[`${this.getBlockId(0, "variable")}${i}`] = {
             opcode: blockParameters[i].parameterValue(),
             inputs: {},
             fields: {},
@@ -68,7 +73,7 @@ class Sprite {
             this.getBlockId(0, "menu") + i,
           ];
 
-          this.blocks[this.getBlockId(0, "variable") + i] = {
+          this.spriteDetails.blocks[this.getBlockId(0, "variable") + i] = {
             opcode: blockParameters[i].parameterValue(),
             inputs: {},
             fields: {},
@@ -78,7 +83,7 @@ class Sprite {
             topLevel: false,
           };
 
-          this.blocks[this.getBlockId(0, "menu") + i] = {
+          this.spriteDetails.blocks[this.getBlockId(0, "menu") + i] = {
             opcode: `${blockParameters[i].menuBlockOpcode}`,
             inputs: {},
             fields: { [blockParameters[i].parameterName]: ["", null] },
@@ -93,7 +98,7 @@ class Sprite {
             this.getBlockId(0, "menu") + `${i}`,
           ];
 
-          this.blocks[this.getBlockId(0, "menu") + i] = {
+          this.spriteDetails.blocks[this.getBlockId(0, "menu") + i] = {
             opcode: `${blockParameters[i].menuBlockOpcode}`,
             inputs: {},
             fields: {
@@ -119,11 +124,14 @@ class Sprite {
       }
     }
 
-    this.blocks[this.getBlockId(0)] = {
+    this.spriteDetails.blocks[this.getBlockId(0)] = {
       opcode,
       inputs,
       fields,
-      parent: Object.keys(this.blocks).length == 0 ? null : this.getBlockId(-1),
+      parent:
+        Object.keys(this.spriteDetails.blocks).length == 0
+          ? null
+          : this.getBlockId(-1),
       next: null,
       shadow: false,
       topLevel,
@@ -132,7 +140,7 @@ class Sprite {
     };
 
     this.blocksCount++;
-    this.blocks[this.getBlockId(-1)].next = this.getBlockId(0);
+    this.spriteDetails.blocks[this.getBlockId(-1)].next = this.getBlockId(0);
   }
 
   private getBlockId(
@@ -145,6 +153,91 @@ class Sprite {
     else if (blockType == "menu") prefix = "menuBlock-";
 
     return `${prefix}${this.spriteHash}${this.blocksCount + blockCountsAway}`;
+  }
+
+  public addCostumes(costumesImageFolder: string): void {
+    const directoryPath: string = resolve(costumesImageFolder);
+    const costumeImageFolderContents: string[] = readdirSync(directoryPath);
+    const cacheCostumes: CacheJsonObject = JSON.parse(
+      readFileSync(`${__dirname}/cache/costumes.json`, "utf-8")
+    );
+
+    if (cacheCostumes[this.name] == undefined)
+      cacheCostumes[this.name] = { costumesNumber: 0 };
+
+    for (let file of costumeImageFolderContents) {
+      const { name, ext }: ParsedPath = parse(file);
+
+      if (ext != "") {
+        const fileMd5: string = md5Convert(name);
+        const { width, height }: ISizeCalculationResult = sizeOf(
+          directoryPath + "\\" + file
+        );
+
+        if (!width || !height) {
+          throw new Error(
+            `${
+              directoryPath + "\\" + file
+            } does not have width or height metadata`
+          );
+        }
+
+        this.spriteDetails.costumes.availableCostumes[name] =
+          directoryPath + "\\" + file;
+
+        this.spriteDetails.costumes.costumes.push({
+          assetId: fileMd5,
+          bitmapResolution: 1,
+          dataFormat: ext,
+          md5ext: fileMd5 + ext,
+          name,
+          rotationCenterX: width / 2,
+          rotationCenterY: height / 2,
+        });
+
+        if (!cacheCostumes[this.name][file]) {
+          this.spriteDetails.costumes.newCostumes.push({
+            assetId: fileMd5,
+            bitmapResolution: 1,
+            dataFormat: ext,
+            md5ext: fileMd5 + ext,
+            name,
+            rotationCenterX: width / 2,
+            rotationCenterY: height / 2,
+          });
+
+          cacheCostumes[this.name][file] = directoryPath + "\\" + file;
+
+          if (typeof cacheCostumes["costumesNumber"] == "number") {
+            cacheCostumes["costumesNumber"]++;
+          }
+
+          writeFileSync(
+            `${__dirname}/cache/costumes.json`,
+            JSON.stringify(cacheCostumes)
+          );
+        }
+      }
+    }
+  }
+
+  public addSounds(soundsFolder: string): void {
+    const directoryPath: string = resolve(soundsFolder);
+    const soundFolderContents: string[] = readdirSync(directoryPath);
+    const cacheSounds: CacheJsonObject = JSON.parse(
+      readFileSync(`${__dirname}/cache/sounds.json`, "utf-8")
+    );
+
+    for (let file of soundFolderContents) {
+      const { ext }: ParsedPath = parse(file);
+
+      if (ext == ".wav") {
+        console.log("wav");
+      } else if (ext == ".mp3") {
+      } else {
+        throw new Error("All sound files must be mp3 or wav");
+      }
+    }
   }
 
   public whenGreenFlagClicked(): void {
@@ -499,7 +592,7 @@ class Sprite {
   public switchCostumeTo(costumeName: string | Function): void {
     if (
       typeof costumeName == "string" &&
-      this.costumes.availableCostumes[costumeName] == undefined
+      this.spriteDetails.costumes.availableCostumes[costumeName] == undefined
     )
       throw new Error(`${costumeName} is not an available costume`);
 
