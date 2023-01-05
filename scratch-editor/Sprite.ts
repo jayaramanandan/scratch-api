@@ -1,20 +1,19 @@
 import { createHash } from "crypto";
 import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve, parse, ParsedPath } from "path";
-import sizeOf from "image-size";
-import sox from "sox.js";
 
 import { BlockDetails, Field, Inputs } from "./modules/types/BlockDetails";
 import SpriteDetails from "./modules/types/SpriteDetails";
 import CacheJsonObject from "./modules/types/CacheJsonObject";
 import md5Convert from "./modules/functions/md5Convert";
+import sizeOf from "image-size";
 import { ISizeCalculationResult } from "image-size/dist/types/interface";
 
 class Sprite {
   public spriteDetails: SpriteDetails = {
     blocks: {},
     costumes: { availableCostumes: {}, costumes: [], newCostumes: [] },
-    sounds: { availableSounds: {}, soundsFolder: "", sounds: [] },
+    sounds: { availableSounds: {}, sounds: [] },
   };
   private spriteHash: string;
   private blocksCount: number = 0;
@@ -211,14 +210,14 @@ class Sprite {
           if (typeof cacheCostumes["costumesNumber"] == "number") {
             cacheCostumes["costumesNumber"]++;
           }
-
-          writeFileSync(
-            `${__dirname}/cache/costumes.json`,
-            JSON.stringify(cacheCostumes)
-          );
         }
       }
     }
+
+    writeFileSync(
+      `${__dirname}/cache/costumes.json`,
+      JSON.stringify(cacheCostumes)
+    );
   }
 
   public addSounds(soundsFolder: string): void {
@@ -229,14 +228,24 @@ class Sprite {
     );
 
     for (let file of soundFolderContents) {
-      const { ext }: ParsedPath = parse(file);
+      const { ext, name }: ParsedPath = parse(file);
 
-      if (ext == ".wav") {
-        console.log("wav");
-      } else if (ext == ".mp3") {
-      } else {
+      if (ext != ".mp3" && ext != ".wav") {
         throw new Error("All sound files must be mp3 or wav");
       }
+
+      this.spriteDetails.sounds.availableSounds[name] =
+        directoryPath + "\\" + file;
+      this.spriteDetails.sounds.sounds.push({});
+
+      if (cacheSounds[this.name][file] == undefined) {
+        cacheSounds[this.name][file] = directoryPath + "\\" + file;
+      }
+
+      writeFileSync(
+        `${__dirname}/cache/sounds.json`,
+        JSON.stringify(cacheSounds)
+      );
     }
   }
 

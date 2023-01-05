@@ -1,5 +1,5 @@
 import Block from "./Block";
-import { Costume } from "./Sprite";
+import { Costume, Sound } from "./Sprite";
 
 interface SpriteDetails {
   blocks: { [id: string]: Block };
@@ -11,9 +11,8 @@ interface SpriteDetails {
   };
 
   sounds: {
-    soundsFolder: string | null;
     availableSounds: { [key: string]: string };
-    sounds: Costume[]; //change this
+    sounds: Sound[]; //change this
   };
 }
 
