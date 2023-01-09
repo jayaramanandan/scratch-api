@@ -1,8 +1,11 @@
 interface CacheJsonObject {
-  [spriteName: string]: {
-    [costumeFileName: string]: string | number;
-    costumesNumber: number;
-  };
+  [spriteName: string]:
+    | {
+        [fileName: string]: string;
+      }
+    | number;
+
+  length: number;
 }
 
 export default CacheJsonObject;

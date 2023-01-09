@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve, parse, ParsedPath } from "path";
+import { WaveFile } from "wavefile";
 
 import { BlockDetails, Field, Inputs } from "./modules/types/BlockDetails";
 import SpriteDetails from "./modules/types/SpriteDetails";
@@ -161,8 +162,7 @@ class Sprite {
       readFileSync(`${__dirname}/cache/costumes.json`, "utf-8")
     );
 
-    if (cacheCostumes[this.name] == undefined)
-      cacheCostumes[this.name] = { costumesNumber: 0 };
+    if (cacheCostumes[this.name] == undefined) cacheCostumes[this.name] = {};
 
     for (let file of costumeImageFolderContents) {
       const { name, ext }: ParsedPath = parse(file);
@@ -207,9 +207,7 @@ class Sprite {
 
           cacheCostumes[this.name][file] = directoryPath + "\\" + file;
 
-          if (typeof cacheCostumes["costumesNumber"] == "number") {
-            cacheCostumes["costumesNumber"]++;
-          }
+          cacheCostumes.length++;
         }
       }
     }
@@ -229,16 +227,20 @@ class Sprite {
 
     for (let file of soundFolderContents) {
       const { ext, name }: ParsedPath = parse(file);
-
-      if (ext != ".mp3" && ext != ".wav") {
+      const fileBuffer: Buffer = readFileSync(directoryPath + "\\" + file);
+      if (ext == ".wav") {
+        let wav: WaveFile = new WaveFile(fileBuffer);
+        console.log(wav.data);
+      } else {
         throw new Error("All sound files must be mp3 or wav");
       }
 
       this.spriteDetails.sounds.availableSounds[name] =
         directoryPath + "\\" + file;
-      this.spriteDetails.sounds.sounds.push({});
+      //this.spriteDetails.sounds.sounds.push({});
 
-      if (cacheSounds[this.name][file] == undefined) {
+      if (!cacheSounds[this.name]) cacheSounds[this.name] = {};
+      if (!cacheSounds[this.name][file]) {
         cacheSounds[this.name][file] = directoryPath + "\\" + file;
       }
 

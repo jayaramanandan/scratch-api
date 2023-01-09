@@ -6,7 +6,7 @@ async function main() {
   await scratch.login("AbeIsGood", `console.log("1")`);
 
   const sprite = new Sprite("Sprite 1");
-  sprite.addSounds("./sounds");
+  sprite.addSounds("./test/sounds");
 
   console.log(
     await scratch.saveProject(775109266, {

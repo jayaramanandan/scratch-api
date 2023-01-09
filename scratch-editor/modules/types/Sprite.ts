@@ -43,4 +43,4 @@ interface Sprite {
   volume: number;
 }
 
-export { Sprite, Costume };
+export { Sprite, Costume, Sound };
