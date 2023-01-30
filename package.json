@@ -11,6 +11,7 @@
   "dependencies": {
     "fs": "^0.0.1-security",
     "image-size": "^1.0.2",
+    "ndsamples": "^1.0.0",
     "node-fetch": "^2.6.7",
     "wavefile": "^11.0.0"
   },

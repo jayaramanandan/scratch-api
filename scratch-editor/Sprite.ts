@@ -194,6 +194,8 @@ class Sprite {
           rotationCenterY: height / 2,
         });
 
+        console.log(cacheCostumes);
+
         if (!cacheCostumes[this.name][file]) {
           this.spriteDetails.costumes.newCostumes.push({
             assetId: fileMd5,
@@ -210,12 +212,9 @@ class Sprite {
           cacheCostumes.length++;
         }
       }
-    }
 
-    writeFileSync(
-      `${__dirname}/cache/costumes.json`,
-      JSON.stringify(cacheCostumes)
-    );
+      writeFileSync(`${__dirname}/cache/costumes.json`, JSON.stringify({}));
+    }
   }
 
   public addSounds(soundsFolder: string): void {
@@ -228,11 +227,12 @@ class Sprite {
     for (let file of soundFolderContents) {
       const { ext, name }: ParsedPath = parse(file);
       const fileBuffer: Buffer = readFileSync(directoryPath + "\\" + file);
+      console.log(ext);
       if (ext == ".wav") {
         let wav: WaveFile = new WaveFile(fileBuffer);
-        console.log(wav.data);
+        console.log(typeof wav.getSamples()[0]);
       } else {
-        throw new Error("All sound files must be mp3 or wav");
+        throw new Error("All sound files must wav");
       }
 
       this.spriteDetails.sounds.availableSounds[name] =
