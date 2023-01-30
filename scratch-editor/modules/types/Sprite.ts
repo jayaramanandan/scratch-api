@@ -11,7 +11,6 @@ interface Costume {
 interface Sound {
   assetId: string;
   dataFormat: string;
-  format: string;
   md5ext: string;
   name: string;
   rate: number;

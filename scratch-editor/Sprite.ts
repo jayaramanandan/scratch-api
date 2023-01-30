@@ -2,13 +2,13 @@ import { createHash } from "crypto";
 import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve, parse, ParsedPath } from "path";
 import { WaveFile } from "wavefile";
+import sizeOf from "image-size";
+import { ISizeCalculationResult } from "image-size/dist/types/interface";
 
 import { BlockDetails, Field, Inputs } from "./modules/types/BlockDetails";
 import SpriteDetails from "./modules/types/SpriteDetails";
-import CacheJsonObject from "./modules/types/CacheJsonObject";
 import md5Convert from "./modules/functions/md5Convert";
-import sizeOf from "image-size";
-import { ISizeCalculationResult } from "image-size/dist/types/interface";
+import JsonObject from "./modules/types/JsonObject";
 
 class Sprite {
   public spriteDetails: SpriteDetails = {
@@ -158,7 +158,7 @@ class Sprite {
   public addCostumes(costumesImageFolder: string): void {
     const directoryPath: string = resolve(costumesImageFolder);
     const costumeImageFolderContents: string[] = readdirSync(directoryPath);
-    const cacheCostumes: CacheJsonObject = JSON.parse(
+    const cacheCostumes: JsonObject = JSON.parse(
       readFileSync(`${__dirname}/cache/costumes.json`, "utf-8")
     );
 
@@ -194,8 +194,6 @@ class Sprite {
           rotationCenterY: height / 2,
         });
 
-        console.log(cacheCostumes);
-
         if (!cacheCostumes[this.name][file]) {
           this.spriteDetails.costumes.newCostumes.push({
             assetId: fileMd5,
@@ -213,31 +211,49 @@ class Sprite {
         }
       }
 
-      writeFileSync(`${__dirname}/cache/costumes.json`, JSON.stringify({}));
+      writeFileSync(
+        `${__dirname}/cache/costumes.json`,
+        JSON.stringify(this.spriteDetails.costumes.availableCostumes)
+      );
     }
   }
 
   public addSounds(soundsFolder: string): void {
     const directoryPath: string = resolve(soundsFolder);
     const soundFolderContents: string[] = readdirSync(directoryPath);
-    const cacheSounds: CacheJsonObject = JSON.parse(
+
+    const cacheSounds: JsonObject = JSON.parse(
       readFileSync(`${__dirname}/cache/sounds.json`, "utf-8")
     );
 
     for (let file of soundFolderContents) {
       const { ext, name }: ParsedPath = parse(file);
+
+      if (ext != ".wav") {
+        throw new Error(
+          "All sound files must wav type: " + file + "is not wav"
+        );
+      }
+
       const fileBuffer: Buffer = readFileSync(directoryPath + "\\" + file);
-      console.log(ext);
-      if (ext == ".wav") {
-        let wav: WaveFile = new WaveFile(fileBuffer);
-        console.log(typeof wav.getSamples()[0]);
-      } else {
-        throw new Error("All sound files must wav");
+      let wav: WaveFile = new WaveFile(fileBuffer);
+      wav.toSampleRate(48000, { method: "sinc" });
+      const samples: any = wav.getSamples(false)[0];
+      let sampleCount: number = 0;
+      if (typeof samples == "object") {
+        sampleCount = samples.length;
       }
 
       this.spriteDetails.sounds.availableSounds[name] =
         directoryPath + "\\" + file;
-      //this.spriteDetails.sounds.sounds.push({});
+      this.spriteDetails.sounds.sounds.push({
+        assetId: "",
+        dataFormat: "wav",
+        md5ext: "",
+        name: file,
+        rate: 48000,
+        sampleCount,
+      });
 
       if (!cacheSounds[this.name]) cacheSounds[this.name] = {};
       if (!cacheSounds[this.name][file]) {
