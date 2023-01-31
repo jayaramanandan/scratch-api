@@ -9,12 +9,13 @@ import { BlockDetails, Field, Inputs } from "./modules/types/BlockDetails";
 import SpriteDetails from "./modules/types/SpriteDetails";
 import md5Convert from "./modules/functions/md5Convert";
 import JsonObject from "./modules/types/JsonObject";
+import SoundDetails from "./modules/types/SoundDetails";
 
 class Sprite {
   public spriteDetails: SpriteDetails = {
     blocks: {},
     costumes: { availableCostumes: {}, costumes: [], newCostumes: [] },
-    sounds: { availableSounds: {}, sounds: [] },
+    sounds: { availableSounds: {}, sounds: [], newSounds: [] },
   };
   private spriteHash: string;
   private blocksCount: number = 0;
@@ -143,6 +144,20 @@ class Sprite {
     this.spriteDetails.blocks[this.getBlockId(-1)].next = this.getBlockId(0);
   }
 
+  private getSoundDetails(fileBuffer: Buffer): SoundDetails {
+    let wav: WaveFile = new WaveFile(fileBuffer);
+
+    wav.toSampleRate(48000, { method: "sinc" });
+    const samples: any = wav.getSamples(false)[0];
+
+    let sampleCount: number = 0;
+    if (typeof samples == "object") {
+      sampleCount = samples.length;
+    }
+
+    return { sound: wav, sampleCount };
+  }
+
   private getBlockId(
     blockCountsAway: number,
     blockType?: "variable" | "menu"
@@ -231,32 +246,16 @@ class Sprite {
 
       if (ext != ".wav") {
         throw new Error(
-          "All sound files must wav type: " + file + "is not wav"
+          "All sound files must have wav extension: " + file + "is not wav"
         );
-      }
-
-      const fileBuffer: Buffer = readFileSync(directoryPath + "\\" + file);
-      let wav: WaveFile = new WaveFile(fileBuffer);
-      wav.toSampleRate(48000, { method: "sinc" });
-      const samples: any = wav.getSamples(false)[0];
-      let sampleCount: number = 0;
-      if (typeof samples == "object") {
-        sampleCount = samples.length;
       }
 
       this.spriteDetails.sounds.availableSounds[name] =
         directoryPath + "\\" + file;
-      this.spriteDetails.sounds.sounds.push({
-        assetId: "",
-        dataFormat: "wav",
-        md5ext: "",
-        name: file,
-        rate: 48000,
-        sampleCount,
-      });
 
       if (!cacheSounds[this.name]) cacheSounds[this.name] = {};
       if (!cacheSounds[this.name][file]) {
+        this.spriteDetails.sounds.newSounds.push(name);
         cacheSounds[this.name][file] = directoryPath + "\\" + file;
       }
 

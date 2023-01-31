@@ -12,7 +12,8 @@ interface SpriteDetails {
 
   sounds: {
     availableSounds: { [key: string]: string };
-    sounds: Sound[]; //change this
+    sounds: Sound[];
+    newSounds: string[];
   };
 }
 
